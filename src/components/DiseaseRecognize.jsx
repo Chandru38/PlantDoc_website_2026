@@ -32,7 +32,7 @@ const DiseaseRecognize = () => {
             setLoading(true);
 
             const res = await axios.post(
-                "http://127.0.0.1:8000/predict",
+                "https://plantdoc-backend-dgof.onrender.com/predict",
                 formData,
                 {
                     headers: {

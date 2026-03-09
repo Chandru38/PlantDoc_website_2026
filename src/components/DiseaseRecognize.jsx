@@ -118,8 +118,8 @@ const DiseaseRecognize = () => {
                     <div className="mt-8 bg-green-400 text-text p-6 rounded-lg w-full max-w-2xl shadow-md">
 
                         {/* Predicted Class */}
-                        <h2 className="text-2xl font-bold mb-2">
-                            <strong>Disease:</strong>{result.class}
+                        <h2 className="mb-3">
+                            {result.class}
                         </h2>
 
                         <p className="mb-3">

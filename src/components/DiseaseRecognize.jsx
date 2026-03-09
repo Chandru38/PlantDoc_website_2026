@@ -45,7 +45,7 @@ const DiseaseRecognize = () => {
             const data = res.data;
 
             setResult({
-                class: data.perdicted_class,
+                class: data.predicted_class,
                 confidence: data.confidence,
                 details: data.remedies
             });
@@ -119,7 +119,7 @@ const DiseaseRecognize = () => {
 
                         {/* Predicted Class */}
                         <h2 className="text-2xl font-bold mb-2">
-                            {result.class}
+                            <strong>Disease:</strong>{result.class}
                         </h2>
 
                         <p className="mb-3">

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import upload from "../assets/upload_icon.svg"
-const API_URL = "https://plantdoc-backend-dgof.onrender.com/predict";
+const API_URL = "https://chandrusankar-plantdoc_backend.hf.space/predict";
 
 const DiseaseRecognize = () => {
 

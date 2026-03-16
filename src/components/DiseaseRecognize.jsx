@@ -60,25 +60,17 @@ const DiseaseRecognize = () => {
 
             let final = null;
 
-            if (data1 && data2) {
-
-                const conf1 = Number(data1.confidence) || 0;
-                const conf2 = Number(data2.confidence) || 0;
-
-                final = conf1 >= conf2 ? data1 : data2;
-
-            } 
-            else if (data1) {
-
-                final = data1;
-
-            } 
-            else if (data2) {
-
+            const class1 = data1?.predicted_class || data1?.prediction;
+            const class2 = data2?.predicted_class || data2?.prediction;
+            
+            if (class2 && MODEL2_CLASSES.includes(class2)) {
+                console.log("Using Model 2");
                 final = data2;
-
             }
-
+            else if (class1 && MODEL1_CLASSES.includes(class1)) {
+                console.log("Using Model 1");
+                final = data1;
+            }
             if (!final) {
                 alert("Prediction failed from both models");
                 return;

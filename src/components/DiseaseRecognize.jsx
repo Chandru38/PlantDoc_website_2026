@@ -26,49 +26,48 @@ const DiseaseRecognize = () => {
     });
 
     const handlePredict = async () => {
-        if (!file) return alert("Upload an image first!");
-    
-        const formData1 = new FormData();
-        formData1.append("file", file);
-    
-        const formData2 = new FormData();
-        formData2.append("file", file);
-    
-        try {
-            setLoading(true);
-    
-            // Call both APIs
-            const [res1, res2] = await Promise.all([
-                axios.post(API_MODEL1, formData1),
-                axios.post(API_MODEL2, formData2)
-            ]);
-    
-            const data1 = res1.data;
-            const data2 = res2.data;
-    
-            // Choose prediction with higher confidence
-            let bestResult;
-    
-            if (data1.confidence > data2.confidence) {
-                bestResult = data1;
-            } else {
-                bestResult = data2;
-            }
-    
-            setResult({
-                class: bestResult.predicted_class,
-                confidence: bestResult.confidence,
-                details: bestResult.remedies
-            });
-    
-        } catch (error) {
-            console.error(error);
-            alert("Prediction failed.");
-        } finally {
-            setLoading(false);
-        }
-    };
+    if (!file) return alert("Upload an image first!");
 
+    const formData1 = new FormData();
+    formData1.append("file", file);
+
+    const formData2 = new FormData();
+    formData2.append("file", file);
+
+    try {
+        setLoading(true);
+
+        const [res1, res2] = await Promise.all([
+            axios.post(API_MODEL1, formData1, {
+                headers: { "Content-Type": "multipart/form-data" }
+            }),
+            axios.post(API_MODEL2, formData2, {
+                headers: { "Content-Type": "multipart/form-data" }
+            })
+        ]);
+
+        const data1 = res1.data;
+        const data2 = res2.data;
+
+        const bestResult =
+            data1.confidence > data2.confidence ? data1 : data2;
+
+        setResult({
+            class: bestResult.predicted_class,
+            confidence:
+                bestResult.confidence > 1
+                    ? bestResult.confidence.toFixed(2)
+                    : (bestResult.confidence * 100).toFixed(2),
+            details: bestResult.remedies
+        });
+
+    } catch (error) {
+        console.error(error);
+        alert("Prediction failed.");
+    } finally {
+        setLoading(false);
+    }
+};
     return (
         <div id='disease-recognizer' className='flex flex-col items-center gap-7 px-4 sm:px-12 lg:px-24 xl:px-40 pt-30 text-text bg-(--color-hero)'>
 

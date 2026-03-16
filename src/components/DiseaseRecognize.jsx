@@ -40,50 +40,56 @@ const DiseaseRecognize = () => {
 
     try {
 
-        // -------- MODEL 1 --------
         const formData1 = new FormData();
         formData1.append("file", file);
 
-        const res1 = await axios.post(API_MODEL1, formData1, {
-            headers: { "Content-Type": "multipart/form-data" }
-        });
+        const formData2 = new FormData();
+        formData2.append("file", file);
 
-        console.log("Model 1 result:", res1.data);
+        // Send image to both models
+        const [res1, res2] = await Promise.allSettled([
+            axios.post(API_MODEL1, formData1),
+            axios.post(API_MODEL2, formData2)
+        ]);
+
+        let model1Data = null;
+        let model2Data = null;
+
+        if (res1.status === "fulfilled") {
+            model1Data = res1.value.data;
+            console.log("Model1:", model1Data);
+        }
+
+        if (res2.status === "fulfilled") {
+            model2Data = res2.value.data;
+            console.log("Model2:", model2Data);
+        }
+
+        // Decide which result to use
+        let finalResult = null;
+
+        if (model1Data && model1Data.predicted_class !== "Unknown") {
+            finalResult = model1Data;
+        } 
+        else if (model2Data && model2Data.predicted_class !== "Unknown") {
+            finalResult = model2Data;
+        }
+
+        if (!finalResult) {
+            alert("No disease detected by either model");
+            return;
+        }
 
         setResult({
-            class: res1.data.predicted_class,
-            confidence: res1.data.confidence,
-            details: res1.data.remedies
+            class: finalResult.predicted_class,
+            confidence: finalResult.confidence,
+            details: finalResult.remedies
         });
 
-    } catch (error1) {
+    } catch (error) {
 
-        console.log("Model 1 failed, trying Model 2");
-
-        try {
-
-            // -------- MODEL 2 --------
-            const formData2 = new FormData();
-            formData2.append("file", file);
-
-            const res2 = await axios.post(API_MODEL2, formData2, {
-                headers: { "Content-Type": "multipart/form-data" }
-            });
-
-            console.log("Model 2 result:", res2.data);
-
-            setResult({
-                class: res2.data.predicted_class,
-                confidence: res2.data.confidence,
-                details: res2.data.remedies
-            });
-
-        } catch (error2) {
-
-            console.error("Both models failed:", error2);
-            alert("Prediction failed from both models.");
-
-        }
+        console.error("Prediction error:", error);
+        alert("Prediction failed");
 
     } finally {
 

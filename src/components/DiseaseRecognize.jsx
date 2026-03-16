@@ -35,49 +35,53 @@ const DiseaseRecognize = () => {
         return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     setLoading(true);
+    setResult(null);
 
     try {
 
-        // TRY MODEL 1 FIRST
-        let response = await axios.post(API_MODEL1, formData, {
+        // -------- MODEL 1 --------
+        const formData1 = new FormData();
+        formData1.append("file", file);
+
+        const res1 = await axios.post(API_MODEL1, formData1, {
             headers: { "Content-Type": "multipart/form-data" }
         });
 
-        console.log("Model 1 Success:", response.data);
+        console.log("Model 1 result:", res1.data);
 
         setResult({
-            class: response.data.predicted_class,
-            confidence: response.data.confidence,
-            details: response.data.remedies
+            class: res1.data.predicted_class,
+            confidence: res1.data.confidence,
+            details: res1.data.remedies
         });
 
     } catch (error1) {
 
-        console.log("Model 1 failed, trying Model 2...");
+        console.log("Model 1 failed, trying Model 2");
 
         try {
 
-            // FALLBACK TO MODEL 2
-            let response = await axios.post(API_MODEL2, formData, {
+            // -------- MODEL 2 --------
+            const formData2 = new FormData();
+            formData2.append("file", file);
+
+            const res2 = await axios.post(API_MODEL2, formData2, {
                 headers: { "Content-Type": "multipart/form-data" }
             });
 
-            console.log("Model 2 Success:", response.data);
+            console.log("Model 2 result:", res2.data);
 
             setResult({
-                class: response.data.predicted_class,
-                confidence: response.data.confidence,
-                details: response.data.remedies
+                class: res2.data.predicted_class,
+                confidence: res2.data.confidence,
+                details: res2.data.remedies
             });
 
         } catch (error2) {
 
             console.error("Both models failed:", error2);
-            alert("Prediction failed. Please try again.");
+            alert("Prediction failed from both models.");
 
         }
 

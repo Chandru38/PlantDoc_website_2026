@@ -30,63 +30,63 @@ const DiseaseRecognize = () => {
 
     const handlePredict = async () => {
 
-        if (!file) {
-            alert("Upload an image first!");
-            return;
-        }
+    if (!file) {
+        alert("Upload an image first!");
+        return;
+    }
 
-        const formData = new FormData();
-        formData.append("file", file);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setLoading(true);
+
+    try {
+
+        // TRY MODEL 1 FIRST
+        let response = await axios.post(API_MODEL1, formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+        });
+
+        console.log("Model 1 Success:", response.data);
+
+        setResult({
+            class: response.data.predicted_class,
+            confidence: response.data.confidence,
+            details: response.data.remedies
+        });
+
+    } catch (error1) {
+
+        console.log("Model 1 failed, trying Model 2...");
 
         try {
 
-            setLoading(true);
-
-            const [res1, res2] = await Promise.all([
-                axios.post(API_MODEL1, formData, {
-                    headers: { "Content-Type": "multipart/form-data" }
-                }),
-                axios.post(API_MODEL2, formData, {
-                    headers: { "Content-Type": "multipart/form-data" }
-                })
-            ]);
-
-            const data1 = res1.data;
-            const data2 = res2.data;
-
-            console.log("Model 1 result:", data1);
-            console.log("Model 2 result:", data2);
-
-            const normalizeConfidence = (conf) => {
-                if (!conf) return 0;
-                return conf > 1 ? conf / 100 : conf;
-            };
-
-            const conf1 = normalizeConfidence(data1.confidence);
-            const conf2 = normalizeConfidence(data2.confidence);
-
-            const bestResult = conf1 > conf2 ? data1 : data2;
-
-            const finalConfidence = normalizeConfidence(bestResult.confidence) * 100;
-
-            setResult({
-                class: bestResult.predicted_class,
-                confidence: finalConfidence.toFixed(2),
-                details: bestResult.remedies
+            // FALLBACK TO MODEL 2
+            let response = await axios.post(API_MODEL2, formData, {
+                headers: { "Content-Type": "multipart/form-data" }
             });
 
-        } catch (error) {
+            console.log("Model 2 Success:", response.data);
 
-            console.error("Prediction Error:", error);
+            setResult({
+                class: response.data.predicted_class,
+                confidence: response.data.confidence,
+                details: response.data.remedies
+            });
+
+        } catch (error2) {
+
+            console.error("Both models failed:", error2);
             alert("Prediction failed. Please try again.");
 
-        } finally {
-
-            setLoading(false);
-
         }
-    };
 
+    } finally {
+
+        setLoading(false);
+
+    }
+};
     return (
         <div
             id="disease-recognizer"

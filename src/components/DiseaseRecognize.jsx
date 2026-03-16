@@ -26,7 +26,7 @@ const DiseaseRecognize = () => {
         },
     });
 
-    // Send image to API
+    // Send image to model
     const sendToModel = async (url) => {
         const formData = new FormData();
         formData.append("file", file);
@@ -60,21 +60,33 @@ const DiseaseRecognize = () => {
 
             let final = null;
 
-            if (data1 && (data1.predicted_class || data1.prediction)) {
-                final = data1;
+            if (data1 && data2) {
+
+                const conf1 = Number(data1.confidence) || 0;
+                const conf2 = Number(data2.confidence) || 0;
+
+                final = conf1 >= conf2 ? data1 : data2;
+
             } 
-            else if (data2 && (data2.predicted_class || data2.prediction)) {
+            else if (data1) {
+
+                final = data1;
+
+            } 
+            else if (data2) {
+
                 final = data2;
+
             }
 
             if (!final) {
-                alert("No disease detected by either model");
+                alert("Prediction failed from both models");
                 return;
             }
 
             setResult({
                 class: final.predicted_class || final.prediction,
-                confidence: final.confidence,
+                confidence: ((Number(final.confidence) || 0) * 100).toFixed(2),
                 details: final.remedies
             });
 

@@ -2,7 +2,6 @@ import Title from "./Title";
 import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
-import upload from "../assets/upload_icon.svg";
 
 const API_MODEL1 = "https://chandrusankar-plantdoc-backend.hf.space/predict";
 const API_MODEL2 = "https://chandrusankar-plantdoc-backend2.hf.space/predict";
@@ -19,7 +18,6 @@ const DiseaseRecognize = () => {
         noClick: true,
         onDrop: (acceptedFiles) => {
             const selected = acceptedFiles[0];
-
             if (!selected) return;
 
             setFile(selected);
@@ -28,62 +26,70 @@ const DiseaseRecognize = () => {
         },
     });
 
+    // Send image to API
+    const sendToModel = async (url) => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await axios.post(url, formData);
+        return response.data;
+    };
+
     const handlePredict = async () => {
 
-    if (!file) {
-        alert("Upload an image first!");
-        return;
-    }
-
-    setLoading(true);
-    setResult(null);
-
-    try {
-
-        const model1Promise = sendToModel(API_MODEL1);
-        const model2Promise = sendToModel(API_MODEL2);
-
-        const [res1, res2] = await Promise.allSettled([
-            model1Promise,
-            model2Promise
-        ]);
-
-        let data1 = res1.status === "fulfilled" ? res1.value : null;
-        let data2 = res2.status === "fulfilled" ? res2.value : null;
-
-        console.log("Model1:", data1);
-        console.log("Model2:", data2);
-
-        let final = null;
-
-        if (data1 && data1.predicted_class !== "Unknown") {
-            final = data1;
-        } else if (data2 && data2.predicted_class !== "Unknown") {
-            final = data2;
-        }
-
-        if (!final) {
-            alert("No disease detected");
+        if (!file) {
+            alert("Upload an image first!");
             return;
         }
 
-        setResult({
-            class: final.predicted_class,
-            confidence: final.confidence,
-            details: final.remedies
-        });
+        setLoading(true);
+        setResult(null);
 
-    } catch (err) {
+        try {
 
-        console.error(err);
-        alert("Prediction error");
+            const [res1, res2] = await Promise.allSettled([
+                sendToModel(API_MODEL1),
+                sendToModel(API_MODEL2)
+            ]);
 
-    } finally {
+            const data1 = res1.status === "fulfilled" ? res1.value : null;
+            const data2 = res2.status === "fulfilled" ? res2.value : null;
 
-        setLoading(false);
+            console.log("Model1:", data1);
+            console.log("Model2:", data2);
 
-    }
-};
+            let final = null;
+
+            if (data1 && (data1.predicted_class || data1.prediction)) {
+                final = data1;
+            } 
+            else if (data2 && (data2.predicted_class || data2.prediction)) {
+                final = data2;
+            }
+
+            if (!final) {
+                alert("No disease detected by either model");
+                return;
+            }
+
+            setResult({
+                class: final.predicted_class || final.prediction,
+                confidence: final.confidence,
+                details: final.remedies
+            });
+
+        } catch (error) {
+
+            console.error("Prediction error:", error);
+            alert("Prediction failed");
+
+        } finally {
+
+            setLoading(false);
+
+        }
+    };
+
     return (
         <div
             id="disease-recognizer"
@@ -104,16 +110,6 @@ const DiseaseRecognize = () => {
                 >
 
                     <input {...getInputProps()} />
-
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="62"
-                        height="52"
-                        fill="currentColor"
-                        viewBox="0 0 16 16"
-                    >
-                        <path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2m2.354 5.146a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0z"/>
-                    </svg>
 
                     <p>Drag & drop image here</p>
 
@@ -146,7 +142,7 @@ const DiseaseRecognize = () => {
                 {/* Predict Button */}
                 <button
                     onClick={handlePredict}
-                    disabled={loading}
+                    disabled={!file || loading}
                     className="mt-6 px-6 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700"
                 >
                     {loading ? "Predicting..." : "Predict"}
@@ -165,9 +161,7 @@ const DiseaseRecognize = () => {
                         </p>
 
                         {result.details && (
-
                             <>
-
                                 {result.details.description && (
                                     <p className="mb-3">
                                         {result.details.description}
@@ -206,7 +200,6 @@ const DiseaseRecognize = () => {
                                         </ul>
                                     </>
                                 )}
-
                             </>
                         )}
 

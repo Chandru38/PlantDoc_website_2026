@@ -1,11 +1,11 @@
-import Title from './Title'
+import Title from "./Title";
 import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
-import upload from "../assets/upload_icon.svg"
+import upload from "../assets/upload_icon.svg";
+
 const API_MODEL1 = "https://chandrusankar-plantdoc-backend.hf.space/predict";
 const API_MODEL2 = "https://chandrusankar-plantdoc-backend2.hf.space/predict";
-
 
 const DiseaseRecognize = () => {
 
@@ -19,61 +19,83 @@ const DiseaseRecognize = () => {
         noClick: true,
         onDrop: (acceptedFiles) => {
             const selected = acceptedFiles[0];
+
+            if (!selected) return;
+
             setFile(selected);
             setPreview(URL.createObjectURL(selected));
-            setResult(null); // reset old result
+            setResult(null);
         },
     });
 
     const handlePredict = async () => {
-    if (!file) return alert("Upload an image first!");
 
-    const formData1 = new FormData();
-    formData1.append("file", file);
+        if (!file) {
+            alert("Upload an image first!");
+            return;
+        }
 
-    const formData2 = new FormData();
-    formData2.append("file", file);
+        const formData = new FormData();
+        formData.append("file", file);
 
-    try {
-        setLoading(true);
+        try {
 
-        const [res1, res2] = await Promise.all([
-            axios.post(API_MODEL1, formData1, {
-                headers: { "Content-Type": "multipart/form-data" }
-            }),
-            axios.post(API_MODEL2, formData2, {
-                headers: { "Content-Type": "multipart/form-data" }
-            })
-        ]);
+            setLoading(true);
 
-        const data1 = res1.data;
-        const data2 = res2.data;
+            const [res1, res2] = await Promise.all([
+                axios.post(API_MODEL1, formData, {
+                    headers: { "Content-Type": "multipart/form-data" }
+                }),
+                axios.post(API_MODEL2, formData, {
+                    headers: { "Content-Type": "multipart/form-data" }
+                })
+            ]);
 
-        const bestResult =
-            data1.confidence > data2.confidence ? data1 : data2;
+            const data1 = res1.data;
+            const data2 = res2.data;
 
-        setResult({
-            class: bestResult.predicted_class,
-            confidence:
-                bestResult.confidence > 1
-                    ? bestResult.confidence.toFixed(2)
-                    : (bestResult.confidence * 100).toFixed(2),
-            details: bestResult.remedies
-        });
+            console.log("Model 1 result:", data1);
+            console.log("Model 2 result:", data2);
 
-    } catch (error) {
-        console.error(error);
-        alert("Prediction failed.");
-    } finally {
-        setLoading(false);
-    }
-};
+            const normalizeConfidence = (conf) => {
+                if (!conf) return 0;
+                return conf > 1 ? conf / 100 : conf;
+            };
+
+            const conf1 = normalizeConfidence(data1.confidence);
+            const conf2 = normalizeConfidence(data2.confidence);
+
+            const bestResult = conf1 > conf2 ? data1 : data2;
+
+            const finalConfidence = normalizeConfidence(bestResult.confidence) * 100;
+
+            setResult({
+                class: bestResult.predicted_class,
+                confidence: finalConfidence.toFixed(2),
+                details: bestResult.remedies
+            });
+
+        } catch (error) {
+
+            console.error("Prediction Error:", error);
+            alert("Prediction failed. Please try again.");
+
+        } finally {
+
+            setLoading(false);
+
+        }
+    };
+
     return (
-        <div id='disease-recognizer' className='flex flex-col items-center gap-7 px-4 sm:px-12 lg:px-24 xl:px-40 pt-30 text-text bg-(--color-hero)'>
+        <div
+            id="disease-recognizer"
+            className="flex flex-col items-center gap-7 px-4 sm:px-12 lg:px-24 xl:px-40 pt-30 text-text bg-(--color-hero)"
+        >
 
             <Title
-                title='Disease Recognizer'
-                desc='Upload a plant leaf image to detect disease and get remedies instantly.'
+                title="Disease Recognizer"
+                desc="Upload a plant leaf image to detect disease and get remedies instantly."
             />
 
             <div className="flex flex-col items-center p-10 w-full">
@@ -83,19 +105,29 @@ const DiseaseRecognize = () => {
                     {...getRootProps()}
                     className="flex flex-col items-center justify-center gap-3 p-8 border-2 border-dashed border-gray-400 rounded-lg cursor-pointer w-full max-w-xl"
                 >
+
                     <input {...getInputProps()} />
-                    {/* <img src={upload} alt="upload icon" className="w-12" /> */}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="62" height="52" fill="currentColor" className="bi bi-cloud-arrow-up-fill" viewBox="0 0 16 16">
+
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="62"
+                        height="52"
+                        fill="currentColor"
+                        viewBox="0 0 16 16"
+                    >
                         <path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2m2.354 5.146a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0z"/>
                     </svg>
+
                     <p>Drag & drop image here</p>
+
                     <button
-                        type='button'
+                        type="button"
                         onClick={open}
                         className="px-6 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
                     >
                         Browse
                     </button>
+
                 </div>
 
                 {/* Selected file */}
@@ -123,12 +155,11 @@ const DiseaseRecognize = () => {
                     {loading ? "Predicting..." : "Predict"}
                 </button>
 
-                {/* RESULT SECTION */}
+                {/* RESULT */}
                 {result && (
                     <div className="mt-8 bg-green-400 text-text p-6 rounded-lg w-full max-w-2xl shadow-md">
 
-                        {/* Predicted Class */}
-                        <h2 className="mb-3">
+                        <h2 className="mb-3 text-xl font-semibold">
                             {result.class}
                         </h2>
 
@@ -136,16 +167,16 @@ const DiseaseRecognize = () => {
                             <strong>Confidence:</strong> {result.confidence}%
                         </p>
 
-                        {/* If disease details exist */}
                         {result.details && (
+
                             <>
+
                                 {result.details.description && (
                                     <p className="mb-3">
                                         {result.details.description}
                                     </p>
                                 )}
 
-                                {/* Remedies */}
                                 {result.details.remedies?.length > 0 && (
                                     <>
                                         <h3 className="font-semibold mt-4">Remedies:</h3>
@@ -157,7 +188,6 @@ const DiseaseRecognize = () => {
                                     </>
                                 )}
 
-                                {/* Precautions */}
                                 {result.details.precautions?.length > 0 && (
                                     <>
                                         <h3 className="font-semibold mt-4">Precautions:</h3>
@@ -169,7 +199,6 @@ const DiseaseRecognize = () => {
                                     </>
                                 )}
 
-                                {/* Prevention */}
                                 {result.details.prevention?.length > 0 && (
                                     <>
                                         <h3 className="font-semibold mt-4">Prevention:</h3>
@@ -180,6 +209,7 @@ const DiseaseRecognize = () => {
                                         </ul>
                                     </>
                                 )}
+
                             </>
                         )}
 

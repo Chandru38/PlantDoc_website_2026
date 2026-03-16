@@ -5,6 +5,8 @@ import axios from "axios";
 
 const API_MODEL1 = "https://chandrusankar-plantdoc-backend.hf.space/predict";
 const API_MODEL2 = "https://chandrusankar-plantdoc-backend2.hf.space/predict";
+const MODEL1_CLASSES = "https://drive.google.com/uc?export=download&id=1jtxZgiPYxe2VdM1RzrtWpoNulPZl_G0L"
+const MODEL2_CLASSES = "https://drive.google.com/uc?export=download&id=1kzWKLi-H3obDEYRoKR3_dNrgORFn2XgP"
 
 const DiseaseRecognize = () => {
 

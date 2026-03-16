@@ -40,56 +40,43 @@ const DiseaseRecognize = () => {
 
     try {
 
-        const formData1 = new FormData();
-        formData1.append("file", file);
+        const model1Promise = sendToModel(API_MODEL1);
+        const model2Promise = sendToModel(API_MODEL2);
 
-        const formData2 = new FormData();
-        formData2.append("file", file);
-
-        // Send image to both models
         const [res1, res2] = await Promise.allSettled([
-            axios.post(API_MODEL1, formData1),
-            axios.post(API_MODEL2, formData2)
+            model1Promise,
+            model2Promise
         ]);
 
-        let model1Data = null;
-        let model2Data = null;
+        let data1 = res1.status === "fulfilled" ? res1.value : null;
+        let data2 = res2.status === "fulfilled" ? res2.value : null;
 
-        if (res1.status === "fulfilled") {
-            model1Data = res1.value.data;
-            console.log("Model1:", model1Data);
+        console.log("Model1:", data1);
+        console.log("Model2:", data2);
+
+        let final = null;
+
+        if (data1 && data1.predicted_class !== "Unknown") {
+            final = data1;
+        } else if (data2 && data2.predicted_class !== "Unknown") {
+            final = data2;
         }
 
-        if (res2.status === "fulfilled") {
-            model2Data = res2.value.data;
-            console.log("Model2:", model2Data);
-        }
-
-        // Decide which result to use
-        let finalResult = null;
-
-        if (model1Data && model1Data.predicted_class !== "Unknown") {
-            finalResult = model1Data;
-        } 
-        else if (model2Data && model2Data.predicted_class !== "Unknown") {
-            finalResult = model2Data;
-        }
-
-        if (!finalResult) {
-            alert("No disease detected by either model");
+        if (!final) {
+            alert("No disease detected");
             return;
         }
 
         setResult({
-            class: finalResult.predicted_class,
-            confidence: finalResult.confidence,
-            details: finalResult.remedies
+            class: final.predicted_class,
+            confidence: final.confidence,
+            details: final.remedies
         });
 
-    } catch (error) {
+    } catch (err) {
 
-        console.error("Prediction error:", error);
-        alert("Prediction failed");
+        console.error(err);
+        alert("Prediction error");
 
     } finally {
 

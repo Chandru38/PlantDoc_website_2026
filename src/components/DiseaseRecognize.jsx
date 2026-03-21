@@ -149,8 +149,18 @@ const DiseaseRecognize = () => {
 
             let final = null;
 
-            const isValidModel1 = class1 && MODEL1_CLASSES.includes(class1);
-            const isValidModel2 = class2 && MODEL2_CLASSES.includes(class2);
+            // 🔥 DEFINE CLASSES FIRST (MISSING IN YOUR CODE)
+            const class1 = data1?.predicted_class || data1?.prediction;
+            const class2 = data2?.predicted_class || data2?.prediction;
+            
+            // Optional normalization (recommended)
+            const normalize = (str) => str?.trim();
+            
+            const normClass1 = normalize(class1);
+            const normClass2 = normalize(class2);
+            
+            const isValidModel1 = normClass1 && MODEL1_CLASSES.includes(normClass1);
+            const isValidModel2 = normClass2 && MODEL2_CLASSES.includes(normClass2);
             
             if (isValidModel1 && !isValidModel2) {
                 console.log("✅ Using Model 1");

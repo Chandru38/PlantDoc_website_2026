@@ -1,4 +1,3 @@
-#disease recogntion - mode2 working but model 1 not working
 import Title from "./Title";
 import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";

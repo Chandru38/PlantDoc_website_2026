@@ -148,20 +148,20 @@ const DiseaseRecognize = () => {
                 "Watermelon___mosaic_virus"
             ];
     
-            // 🔥 Decision logic
-            if (MODEL2_PLANTS.includes(plant2) && !MODEL1_PLANTS.includes(plant2)) {
+            // 🔥 Correct Logic
+            if (class2 && MODEL2_CLASSES.includes(class2)) {
                 console.log("✅ Using Model 2");
                 final = data2;
             } 
-            else if (MODEL1_PLANTS.includes(plant1)) {
+            else if (class1 && MODEL1_CLASSES.includes(class1)) {
                 console.log("✅ Using Model 1");
                 final = data1;
             }
-            else if (data1) {
-                final = data1; // fallback
-            }
             else if (data2) {
-                final = data2;
+                final = data2; // fallback
+            }
+            else if (data1) {
+                final = data1;
             }
     
             if (!final) {

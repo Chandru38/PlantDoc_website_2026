@@ -50,14 +50,7 @@ const DiseaseRecognize = () => {
             const class1 = (data1?.predicted_class || "").trim();
             const class2 = (data2?.predicted_class || "").trim();
     
-            // 🔥 Extract plant name
-            const getPlant = (cls) => cls.split("___")[0];
-    
-            const plant1 = class1 ? getPlant(class1) : "";
-            const plant2 = class2 ? getPlant(class2) : "";
-    
-            // 🔥 Plant groups
-            const MODEL1_PLANTS = [
+            const MODEL1_CLASSES = [
                 "Apple___Apple_scab",
                 "Apple___Black_rot",
                 "Apple___Cedar_apple_rust",
@@ -99,7 +92,7 @@ const DiseaseRecognize = () => {
                 "Tomato___healthy"
             ];
     
-            const MODEL2_PLANTS = [
+            const MODEL2_CLASSES = [
                 "Bottlegourd___Anthracnose",
                 "Bottlegourd___Downey_mildew",
                 "Bottlegourd___fresh_leaf",

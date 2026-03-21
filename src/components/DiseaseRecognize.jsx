@@ -46,129 +46,47 @@ const DiseaseRecognize = () => {
         console.log("Model1:", data1);
         console.log("Model2:", data2);
 
+        // ✅ Normalize confidence (important)
+        const normalizeConfidence = (c) => {
+            if (!c) return 0;
+            if (typeof c === "string") return parseFloat(c);
+            if (c <= 1) return c * 100;
+            return c;
+        };
+
+        if (data1) data1.confidence = normalizeConfidence(data1.confidence);
+        if (data2) data2.confidence = normalizeConfidence(data2.confidence);
+
+        // ✅ Validate predictions using FULL class match
+        const isValidModel1 =
+            data1 && MODEL1_PLANTS.includes(data1.predicted_class);
+
+        const isValidModel2 =
+            data2 && MODEL2_PLANTS.includes(data2.predicted_class);
+
+        console.log({
+            validModel1: isValidModel1,
+            validModel2: isValidModel2
+        });
+
         let final = null;
 
-        const class1 = (data1?.predicted_class || "").trim();
-        const class2 = (data2?.predicted_class || "").trim();
-
-        // 🔥 Extract plant name
-        const getPlant = (cls) => cls.split("___")[0];
-
-        const plant1 = class1 ? getPlant(class1) : "";
-        const plant2 = class2 ? getPlant(class2) : "";
-
-        console.log("Plant1:", plant1);
-        console.log("Plant2:", plant2);
-
-        // ✅ Define plant groups (IMPORTANT)
-        const MODEL1_PLANTS = [
-            "Apple___Apple_scab",
-            "Apple___Black_rot",
-            "Apple___Cedar_apple_rust",
-            "Apple___healthy",
-            "Background_without_leaves",
-            "Blueberry___healthy",
-            "Cherry___Powdery_mildew",
-            "Cherry___healthy",
-            "Corn___Cercospora_leaf_spot Gray_leaf_spot",
-            "Corn___Common_rust",
-            "Corn___Northern_Leaf_Blight",
-            "Corn___healthy",
-            "Grape___Black_rot",
-            "Grape___Esca_(Black_Measles)",
-            "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)",
-            "Grape___healthy",
-            "Orange___Haunglongbing_(Citrus_greening)",
-            "Peach___Bacterial_spot",
-            "Peach___healthy",
-            "Pepper,_bell___Bacterial_spot",
-            "Pepper,_bell___healthy",
-            "Potato___Early_blight",
-            "Potato___Late_blight",
-            "Potato___healthy",
-            "Raspberry___healthy",
-            "Soybean___healthy",
-            "Squash___Powdery_mildew",
-            "Strawberry___Leaf_scorch",
-            "Strawberry___healthy",
-            "Tomato___Bacterial_spot",
-            "Tomato___Early_blight",
-            "Tomato___Late_blight",
-            "Tomato___Leaf_Mold",
-            "Tomato___Septoria_leaf_spot",
-            "Tomato___Spider_mites Two-spotted_spider_mite",
-            "Tomato___Target_Spot",
-            "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
-            "Tomato___Tomato_mosaic_virus",
-            "Tomato___healthy"
-            
-        ];
-
-        const MODEL2_PLANTS = [
-            "Bottlegourd___Anthracnose",
-            "Bottlegourd___Downey_mildew",
-            "Bottlegourd___fresh_leaf",
-            "Brinjal___Cercospora Leaf Spot",
-            "Brinjal___healthy",
-            "Capsicum___Bacterial_spot",
-            "Capsicum___healthy",
-            "Cassava___bacterial_blight",
-            "Cassava___brown_streak_disease",
-            "Cassava___green_mottle",
-            "Cassava___healthy",
-            "Cassava___mosaic_disease",
-            "Coffee___healthy",
-            "Coffee___red_spider_mite",
-            "Coffee___rust",
-            "Cucumber___Bacterial_Wilt",
-            "Cucumber___Gummy_Stem_Blight",
-            "Cucumber___Healthy_leaf",
-            "Grape___black_measles",
-            "Grape___black_rot",
-            "Grape___healthy",
-            "Grape___leaf_blight",
-            "Lemon___Bacterial_Blight",
-            "Lemon___Citrus_Canker",
-            "Lemon___Curl_Virus",
-            "Lemon___Healthy",
-            "Lemon___Sooty_Mould", 
-            "Onion___Alternaria_D",
-            "Onion___Healthy",
-            "Onion___Purple_blotch",
-            "Onion___Virosis-D",
-            "Rice___bacterial_blight",
-            "Rice___blast",
-            "Rice___brown_spot",
-            "Rice___tungro",
-            "Rose___healthy",
-            "Rose___rust",
-            "Rose___slug_sawfly",
-            "Sugercane___healthy",
-            "Sugercane___mosaic",
-            "Sugercane___red_rot",
-            "Sugercane___rust",
-            "Sugercane___yellow_leaf",
-            "Watermelon___downy_mildew",
-            "Watermelon___healthy",
-            "Watermelon___mosaic_virus"
-        ];
-
-        // 🔥 FINAL DECISION LOGIC
-        if (MODEL2_PLANTS.includes(plant2) && !MODEL1_PLANTS.includes(plant2)) {
-            console.log("✅ Using Model 2");
-            final = data2;
-        } 
-        else if (MODEL1_PLANTS.includes(plant1)) {
+        // 🔥 SMART DECISION LOGIC
+        if (isValidModel1 && isValidModel2) {
+            // Both models are confident → choose higher confidence
+            final =
+                data1.confidence > data2.confidence ? data1 : data2;
+            console.log("⚖️ Both valid → choosing higher confidence");
+        } else if (isValidModel1) {
+            final = data1;
             console.log("✅ Using Model 1");
-            final = data1;
-        }
-        else if (data1) {
-            console.log("⚠️ Fallback → Model 1");
-            final = data1;
-        }
-        else if (data2) {
-            console.log("⚠️ Fallback → Model 2");
+        } else if (isValidModel2) {
             final = data2;
+            console.log("✅ Using Model 2");
+        } else {
+            // fallback if both uncertain
+            final = data1 || data2;
+            console.log("⚠️ Fallback used");
         }
 
         if (!final) {

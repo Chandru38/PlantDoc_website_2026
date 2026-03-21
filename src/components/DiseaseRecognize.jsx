@@ -25,157 +25,82 @@ const DiseaseRecognize = () => {
     });
 
     const handlePredict = async () => {
-        if (!file) return alert("Upload an image first!");
-    
-        const formData = new FormData();
-        formData.append("file", file);
-    
-        try {
-            setLoading(true);
-    
-            // 🔥 Call both APIs
-            const [res1, res2] = await Promise.allSettled([
-                axios.post(API_MODEL1, formData),
-                axios.post(API_MODEL2, formData)
-            ]);
-    
-            const data1 = res1.status === "fulfilled" ? res1.value.data : null;
-            const data2 = res2.status === "fulfilled" ? res2.value.data : null;
-    
-            console.log("Model1:", data1);
-            console.log("Model2:", data2);
-    
-            let final = null;
-    
-            const class1 = (data1?.predicted_class || "").trim();
-            const class2 = (data2?.predicted_class || "").trim();
-    
-            const MODEL1_CLASSES = [
-                "Apple___Apple_scab",
-                "Apple___Black_rot",
-                "Apple___Cedar_apple_rust",
-                "Apple___healthy",
-                "Background_without_leaves",
-                "Blueberry___healthy",
-                "Cherry___Powdery_mildew",
-                "Cherry___healthy",
-                "Corn___Cercospora_leaf_spot Gray_leaf_spot",
-                "Corn___Common_rust",
-                "Corn___Northern_Leaf_Blight",
-                "Corn___healthy",
-                "Grape___Black_rot",
-                "Grape___Esca_(Black_Measles)",
-                "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)",
-                "Grape___healthy",
-                "Orange___Haunglongbing_(Citrus_greening)",
-                "Peach___Bacterial_spot",
-                "Peach___healthy",
-                "Pepper,_bell___Bacterial_spot",
-                "Pepper,_bell___healthy",
-                "Potato___Early_blight",
-                "Potato___Late_blight",
-                "Potato___healthy",
-                "Raspberry___healthy",
-                "Soybean___healthy",
-                "Squash___Powdery_mildew",
-                "Strawberry___Leaf_scorch",
-                "Strawberry___healthy",
-                "Tomato___Bacterial_spot",
-                "Tomato___Early_blight",
-                "Tomato___Late_blight",
-                "Tomato___Leaf_Mold",
-                "Tomato___Septoria_leaf_spot",
-                "Tomato___Spider_mites Two-spotted_spider_mite",
-                "Tomato___Target_Spot",
-                "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
-                "Tomato___Tomato_mosaic_virus",
-                "Tomato___healthy"
-            ];
-    
-            const MODEL2_CLASSES = [
-                "Bottlegourd___Anthracnose",
-                "Bottlegourd___Downey_mildew",
-                "Bottlegourd___fresh_leaf",
-                "Brinjal___Cercospora Leaf Spot",
-                "Brinjal___healthy",
-                "Capsicum___Bacterial_spot",
-                "Capsicum___healthy",
-                "Cassava___bacterial_blight",
-                "Cassava___brown_streak_disease",
-                "Cassava___green_mottle",
-                "Cassava___healthy",
-                "Cassava___mosaic_disease",
-                "Coffee___healthy",
-                "Coffee___red_spider_mite",
-                "Coffee___rust",
-                "Cucumber___Bacterial_Wilt",
-                "Cucumber___Gummy_Stem_Blight",
-                "Cucumber___Healthy_leaf",
-                "Grape___black_measles",
-                "Grape___black_rot",
-                "Grape___healthy",
-                "Grape___leaf_blight",
-                "Lemon___Bacterial_Blight",
-                "Lemon___Citrus_Canker",
-                "Lemon___Curl_Virus",
-                "Lemon___Healthy",
-                "Lemon___Sooty_Mould",
-                "Onion___Alternaria_D",
-                "Onion___Healthy",
-                "Onion___Purple_blotch",
-                "Onion___Virosis-D",
-                "Rice___bacterial_blight",
-                "Rice___blast",
-                "Rice___brown_spot",
-                "Rice___tungro",
-                "Rose___healthy",
-                "Rose___rust",
-                "Rose___slug_sawfly",
-                "Sugercane___healthy",
-                "Sugercane___mosaic",
-                "Sugercane___red_rot",
-                "Sugercane___rust",
-                "Sugercane___yellow_leaf",
-                "Watermelon___downy_mildew",
-                "Watermelon___healthy",
-                "Watermelon___mosaic_virus"
-            ];
-    
-            // 🔥 Correct Logic
-            if (class2 && MODEL2_CLASSES.includes(class2)) {
-                console.log("✅ Using Model 2");
-                final = data2;
-            } 
-            else if (class1 && MODEL1_CLASSES.includes(class1)) {
-                console.log("✅ Using Model 1");
-                final = data1;
-            }
-            else if (data2) {
-                final = data2; // fallback
-            }
-            else if (data1) {
-                final = data1;
-            }
-    
-            if (!final) {
-                alert("Prediction failed from both models");
-                return;
-            }
-    
-            // ✅ Set result (same UI)
-            setResult({
-                class: final.predicted_class,
-                confidence: final.confidence,
-                details: final.remedies
-            });
-    
-        } catch (error) {
-            console.error(error);
-            alert("Prediction failed. Check backend.");
-        } finally {
-            setLoading(false);
+    if (!file) return alert("Upload an image first!");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        setLoading(true);
+
+        const [res1, res2] = await Promise.allSettled([
+            axios.post(API_MODEL1, formData),
+            axios.post(API_MODEL2, formData)
+        ]);
+
+        const data1 = res1.status === "fulfilled" ? res1.value.data : null;
+        const data2 = res2.status === "fulfilled" ? res2.value.data : null;
+
+        console.log("Model1:", data1);
+        console.log("Model2:", data2);
+
+        let final = null;
+
+        const class1 = (data1?.predicted_class || "").trim();
+        const class2 = (data2?.predicted_class || "").trim();
+
+        // 🔥 Extract plant name
+        const getPlant = (cls) => cls.split("___")[0];
+
+        const plant1 = class1 ? getPlant(class1) : "";
+        const plant2 = class2 ? getPlant(class2) : "";
+
+        // ✅ Only plant names (VERY IMPORTANT)
+        const MODEL1_PLANTS = [
+            "Apple","Blueberry","Cherry","Corn","Grape",
+            "Orange","Peach","Pepper,_bell","Potato",
+            "Raspberry","Soybean","Squash","Strawberry","Tomato"
+        ];
+
+        const MODEL2_PLANTS = [
+            "Bottlegourd","Brinjal","Capsicum","Cassava",
+            "Coffee","Cucumber","Lemon","Onion","Rice",
+            "Rose","Sugercane","Watermelon"
+        ];
+
+        // 🔥 FINAL DECISION LOGIC
+        if (MODEL1_PLANTS.includes(plant1) && !MODEL2_PLANTS.includes(plant1)) {
+            console.log("✅ Using Model 1");
+            final = data1;
+        } 
+        else if (MODEL2_PLANTS.includes(plant2) && !MODEL1_PLANTS.includes(plant2)) {
+            console.log("✅ Using Model 2");
+            final = data2;
+        } 
+        else {
+            // fallback
+            console.log("⚠️ Fallback → Model1 priority");
+            final = data1 || data2;
         }
-    };
+
+        if (!final) {
+            alert("Prediction failed from both models");
+            return;
+        }
+
+        setResult({
+            class: final.predicted_class,
+            confidence: final.confidence,
+            details: final.remedies
+        });
+
+    } catch (error) {
+        console.error(error);
+        alert("Prediction failed. Check backend.");
+    } finally {
+        setLoading(false);
+    }
+};
     return (
         <div id='disease-recognizer' className='flex flex-col items-center gap-7 px-4 sm:px-12 lg:px-24 xl:px-40 pt-30 text-text bg-(--color-hero)'>
 

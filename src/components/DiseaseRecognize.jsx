@@ -29,7 +29,7 @@ const DiseaseRecognize = () => {
 
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("image", file); // 🔥 important for HF compatibility
+        formData.append("image", file);
 
         try {
             setLoading(true);
@@ -54,13 +54,12 @@ const DiseaseRecognize = () => {
             console.log("Model1:", data1);
             console.log("Model2:", data2);
 
-            // ❌ If both failed
             if (!data1 && !data2) {
                 alert("Both models failed. Check console.");
                 return;
             }
 
-            // ✅ Normalize confidence
+            // Normalize confidence
             const normalizeConfidence = (c) => {
                 if (!c) return 0;
                 if (typeof c === "string") return parseFloat(c);
@@ -71,7 +70,7 @@ const DiseaseRecognize = () => {
             if (data1) data1.confidence = normalizeConfidence(data1.confidence);
             if (data2) data2.confidence = normalizeConfidence(data2.confidence);
 
-            // ✅ VALID CLASS LISTS
+            // Class validation
             const MODEL1_PLANTS = [
                 "Apple___Apple_scab","Apple___Black_rot","Apple___Cedar_apple_rust","Apple___healthy",
                 "Background_without_leaves","Blueberry___healthy","Cherry___Powdery_mildew","Cherry___healthy",
@@ -110,26 +109,16 @@ const DiseaseRecognize = () => {
             const isValidModel2 =
                 data2 && MODEL2_PLANTS.includes(data2.predicted_class);
 
-            console.log({
-                validModel1: isValidModel1,
-                validModel2: isValidModel2
-            });
-
             let final = null;
 
-            // 🔥 DECISION LOGIC
             if (isValidModel1 && isValidModel2) {
                 final = data1.confidence > data2.confidence ? data1 : data2;
-                console.log("⚖️ Both valid → higher confidence used");
             } else if (isValidModel1) {
                 final = data1;
-                console.log("✅ Model 1 selected");
             } else if (isValidModel2) {
                 final = data2;
-                console.log("✅ Model 2 selected");
             } else {
                 final = data1 || data2;
-                console.log("⚠️ Fallback used");
             }
 
             if (!final) {
@@ -145,15 +134,6 @@ const DiseaseRecognize = () => {
 
         } catch (error) {
             console.error("FULL ERROR:", error);
-
-            if (error.response) {
-                console.error("Response error:", error.response.data);
-            } else if (error.request) {
-                console.error("No response received:", error.request);
-            } else {
-                console.error("Error message:", error.message);
-            }
-
             alert("Prediction failed - check console");
         } finally {
             setLoading(false);
@@ -161,7 +141,7 @@ const DiseaseRecognize = () => {
     };
 
     return (
-        <div className='flex flex-col items-center gap-7 px-4 pt-30'>
+        <div className='flex flex-col items-center gap-7 px-4 sm:px-12 lg:px-24 pt-20'>
 
             <Title
                 title='Disease Recognizer'
@@ -170,27 +150,58 @@ const DiseaseRecognize = () => {
 
             <div className="flex flex-col items-center p-10 w-full">
 
+                {/* Upload Box */}
                 <div
                     {...getRootProps()}
-                    className="p-8 border-2 border-dashed rounded-lg w-full max-w-xl text-center"
+                    className="flex flex-col items-center justify-center gap-3 p-8 border-2 border-dashed border-gray-400 rounded-lg cursor-pointer w-full max-w-xl"
                 >
                     <input {...getInputProps()} />
+
+                    <svg xmlns="http://www.w3.org/2000/svg" width="50" height="40" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 2a5.53 5.53 0 0 0-3.594 1.342C3.64 4.002 3.085 4.862 2.942 5.725 1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2z"/>
+                    </svg>
+
                     <p>Drag & drop image here</p>
-                    <button onClick={open}>Browse</button>
+
+                    <button
+                        type="button"
+                        onClick={open}
+                        className="px-6 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+                    >
+                        Browse
+                    </button>
                 </div>
 
-                {preview && <img src={preview} className="mt-4 w-64" />}
+                {/* Preview */}
+                {preview && (
+                    <img
+                        src={preview}
+                        alt="preview"
+                        className="mt-4 w-64 rounded-lg shadow-md"
+                    />
+                )}
 
-                <button onClick={handlePredict} disabled={loading}>
+                {/* Predict Button */}
+                <button
+                    onClick={handlePredict}
+                    disabled={loading}
+                    className="mt-6 px-6 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-700"
+                >
                     {loading ? "Predicting..." : "Predict"}
                 </button>
 
+                {/* Result */}
                 {result && (
-                    <div className="mt-8">
-                        <h2>{result.class}</h2>
-                        <p>Confidence: {result.confidence}%</p>
+                    <div className="mt-8 bg-green-400 p-6 rounded-lg w-full max-w-2xl shadow-md">
+                        <h2 className="text-lg font-semibold">
+                            {result.class.replace(/_/g, " ")}
+                        </h2>
+                        <p>
+                            <strong>Confidence:</strong> {result.confidence}%
+                        </p>
                     </div>
                 )}
+
             </div>
         </div>
     );

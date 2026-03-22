@@ -31,59 +31,71 @@ const DiseaseRecognize = () => {
 
     const handlePredict = async () => {
         if (!file) return alert("Upload an image first!");
-
+    
         const formData = new FormData();
         formData.append("file", file);
-
+    
         try {
             setLoading(true);
-
-            // Fire both requests simultaneously
+    
             const [res1, res2] = await Promise.allSettled([
                 axios.post(API_MODEL1, formData),
                 axios.post(API_MODEL2, formData)
             ]);
-
+    
             const data1 = res1.status === "fulfilled" ? res1.value.data : null;
             const data2 = res2.status === "fulfilled" ? res2.value.data : null;
-
-            // Helper to get plant name from "Plant___Disease" string
-            const getPlantName = (res) => res?.predicted_class?.split("___")[0]?.trim() || "";
-
+    
+            // 1. Improved Extraction: Clean the string and handle potential undefined
+            const getPlantName = (res) => {
+                const raw = res?.predicted_class || "";
+                return raw.split("___")[0].trim().toLowerCase();
+            };
+    
             const plant1 = getPlantName(data1);
             const plant2 = getPlantName(data2);
-
+    
+            // 2. Normalize your constant lists to lowercase for comparison
+            const M1_LIST = MODEL1_PLANTS.map(p => p.toLowerCase());
+            const M2_LIST = MODEL2_PLANTS.map(p => p.toLowerCase());
+    
             let finalSelection = null;
-
-            const isModel1Valid = data1 && MODEL1_PLANTS.includes(plant1);
-            const isModel2Valid = data2 && MODEL2_PLANTS.includes(plant2);
-
-            // LOGIC:
+    
+            // 3. Check validity with normalized strings
+            const isModel1Valid = data1 && M1_LIST.includes(plant1);
+            const isModel2Valid = data2 && M2_LIST.includes(plant2);
+    
+            console.log("Detecting:", { plant1, plant2, isModel1Valid, isModel2Valid });
+    
             if (isModel1Valid && !isModel2Valid) {
                 finalSelection = data1;
             } else if (isModel2Valid && !isModel1Valid) {
                 finalSelection = data2;
             } else if (isModel1Valid && isModel2Valid) {
-                // If both claim to know it, pick the one with higher confidence
-                finalSelection = data1.confidence >= data2.confidence ? data1 : data2;
+                // Tie-breaker: Pick the one with higher confidence
+                finalSelection = (data1.confidence >= data2.confidence) ? data1 : data2;
             } else {
-                // Fallback: If neither matches the list, try the one with higher confidence anyway
-                finalSelection = (data1?.confidence || 0) >= (data2?.confidence || 0) ? data1 : data2;
+                // 4. CRITICAL FALLBACK: 
+                // If the plant isn't in your lists, it might be a naming typo.
+                // We pick the model that returned the highest confidence score.
+                const conf1 = data1?.confidence || 0;
+                const conf2 = data2?.confidence || 0;
+                finalSelection = conf1 >= conf2 ? data1 : data2;
             }
-
-            if (!finalSelection) {
-                throw new Error("No data received from either model.");
+    
+            if (!finalSelection || !finalSelection.predicted_class) {
+                throw new Error("Invalid response from models");
             }
-
+    
             setResult({
                 class: finalSelection.predicted_class,
                 confidence: finalSelection.confidence,
-                details: finalSelection.remedies // Assuming 'remedies' contains description/prevention/etc.
+                details: finalSelection.remedies || finalSelection.details 
             });
-
+    
         } catch (error) {
             console.error("Prediction Error:", error);
-            alert("Prediction failed. Please ensure the backend is active.");
+            alert("Prediction failed. Make sure your plant is supported.");
         } finally {
             setLoading(false);
         }

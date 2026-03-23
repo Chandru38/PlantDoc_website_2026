@@ -14,7 +14,7 @@ const DiseaseRecognize = () => {
 
     // Lists of plants each model is trained on
     const MODEL1_PLANTS = ["Apple","Blueberry","Cherry","Corn","Grape","Orange","Peach","Pepper,_bell","Potato","Raspberry","Soybean","Squash","Strawberry","Tomato"];
-    const MODEL2_PLANTS = ["Bottlegourd","Brinjal","Capsicum","Cassava","Coffee","Cucumber","Lemon","Onion","Rice","Rose","Sugercane","Watermelon"];
+    const MODEL2_PLANTS = ["Bottlegourd","Cassava","Lemon","Rice","Rose","Sugarcane","Watermelon"];
 
     const { getRootProps, getInputProps, open } = useDropzone({
         accept: { "image/*": [] },

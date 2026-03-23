@@ -8,22 +8,22 @@ const Aboutus = () => {
     const servicesData = [
         {
             title:'Train',
-            description: '49179 images',
+            description: '64444 images',
             icon: assets.ads_icon,
         },
         {
             title:'Validation',
-            description: '6139 images',
+            description: '8038 images',
             icon: assets.marketing_icon,
         },
         {
             title:'Test',
-            description: '33 images',
+            description: '52 images',
             icon: assets.content_icon,
         },
         {
             title:'Dataset',
-            description: '38 Classes',
+            description: '65 Classes',
             icon: assets.ads_icon,
         },
     ]

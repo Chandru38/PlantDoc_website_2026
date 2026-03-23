@@ -46,7 +46,6 @@ const DiseaseRecognize = () => {
             const data1 = res1.status === "fulfilled" ? res1.value.data : null;
             const data2 = res2.status === "fulfilled" ? res2.value.data : null;
     
-            // Helper to extract plant name (e.g., "Tomato___Blight" -> "tomato")
             const getPlantName = (res) => {
                 const raw = res?.predicted_class || "";
                 return raw.split("___")[0].trim().toLowerCase();
@@ -55,39 +54,36 @@ const DiseaseRecognize = () => {
             const plant1 = getPlantName(data1);
             const plant2 = getPlantName(data2);
     
-            // Normalize lists to lowercase for strict matching
             const M1_LIST = MODEL1_PLANTS.map(p => p.toLowerCase());
             const M2_LIST = MODEL2_PLANTS.map(p => p.toLowerCase());
     
             let finalSelection = null;
-    
-            // --- NEW SELECTION LOGIC (NO CONFIDENCE) ---
+
+            // --- FIXED SELECTION LOGIC ---
             
-            // 1. Check if Model 1 is actually trained on what it predicted
-            const isModel1Valid = data1 && M1_LIST.includes(plant1);
-            
-            // 2. Check if Model 2 is actually trained on what it predicted
-            const isModel2Valid = data2 && M2_LIST.includes(plant2);
-    
-            if (isModel1Valid) {
-                // Priority 1: If Model 1 recognizes a plant from its own list
-                console.log("Using Model 1 (Plant match)");
-                finalSelection = data1;
-            } 
-            else if (isModel2Valid) {
-                // Priority 2: If Model 1 failed but Model 2 recognizes a plant from its list
-                console.log("Using Model 2 (Plant match)");
+            const isModel1Expert = data1 && M1_LIST.includes(plant1);
+            const isModel2Expert = data2 && M2_LIST.includes(plant2);
+
+            if (isModel2Expert) {
+                // If Model 2 recognizes one of its specific plants (Rice, Sugarcane, etc.)
+                // we give it priority for those specific classes.
+                console.log("✅ Using Model 2 (Expert Match):", plant2);
                 finalSelection = data2;
             } 
+            else if (isModel1Expert) {
+                // Otherwise, if Model 1 recognizes one of its plants
+                console.log("✅ Using Model 1 (Expert Match):", plant1);
+                finalSelection = data1;
+            } 
             else {
-                // Fallback: If neither plant was in the predefined lists, 
-                // default to Model 1 as a generic backup
-                console.log("Fallback to Model 1 (No list match)");
+                // Fallback: If neither "expert" list matches perfectly, 
+                // we use the one that is NOT null.
+                console.log("⚠️ No expert match, using best available data");
                 finalSelection = data1 || data2;
             }
     
             if (!finalSelection || !finalSelection.predicted_class) {
-                throw new Error("Invalid response from both models.");
+                throw new Error("Invalid response from models");
             }
     
             setResult({
@@ -98,7 +94,7 @@ const DiseaseRecognize = () => {
     
         } catch (error) {
             console.error("Prediction Error:", error);
-            alert("Prediction failed. Please check the console for details.");
+            alert("Prediction failed. Please check backend status.");
         } finally {
             setLoading(false);
         }

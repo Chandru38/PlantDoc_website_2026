@@ -46,7 +46,7 @@ const DiseaseRecognize = () => {
             const data1 = res1.status === "fulfilled" ? res1.value.data : null;
             const data2 = res2.status === "fulfilled" ? res2.value.data : null;
     
-            // 1. Improved Extraction: Clean the string and handle potential undefined
+            // Helper to extract plant name (e.g., "Tomato___Blight" -> "tomato")
             const getPlantName = (res) => {
                 const raw = res?.predicted_class || "";
                 return raw.split("___")[0].trim().toLowerCase();
@@ -55,36 +55,39 @@ const DiseaseRecognize = () => {
             const plant1 = getPlantName(data1);
             const plant2 = getPlantName(data2);
     
-            // 2. Normalize your constant lists to lowercase for comparison
+            // Normalize lists to lowercase for strict matching
             const M1_LIST = MODEL1_PLANTS.map(p => p.toLowerCase());
             const M2_LIST = MODEL2_PLANTS.map(p => p.toLowerCase());
     
             let finalSelection = null;
     
-            // 3. Check validity with normalized strings
+            // --- NEW SELECTION LOGIC (NO CONFIDENCE) ---
+            
+            // 1. Check if Model 1 is actually trained on what it predicted
             const isModel1Valid = data1 && M1_LIST.includes(plant1);
+            
+            // 2. Check if Model 2 is actually trained on what it predicted
             const isModel2Valid = data2 && M2_LIST.includes(plant2);
     
-            console.log("Detecting:", { plant1, plant2, isModel1Valid, isModel2Valid });
-    
-            if (isModel1Valid && !isModel2Valid) {
+            if (isModel1Valid) {
+                // Priority 1: If Model 1 recognizes a plant from its own list
+                console.log("Using Model 1 (Plant match)");
                 finalSelection = data1;
-            } else if (isModel2Valid && !isModel1Valid) {
+            } 
+            else if (isModel2Valid) {
+                // Priority 2: If Model 1 failed but Model 2 recognizes a plant from its list
+                console.log("Using Model 2 (Plant match)");
                 finalSelection = data2;
-            } else if (isModel1Valid && isModel2Valid) {
-                // Tie-breaker: Pick the one with higher confidence
-                finalSelection = (data1.confidence >= data2.confidence) ? data1 : data2;
-            } else {
-                // 4. CRITICAL FALLBACK: 
-                // If the plant isn't in your lists, it might be a naming typo.
-                // We pick the model that returned the highest confidence score.
-                const conf1 = data1?.confidence || 0;
-                const conf2 = data2?.confidence || 0;
-                finalSelection = conf1 >= conf2 ? data1 : data2;
+            } 
+            else {
+                // Fallback: If neither plant was in the predefined lists, 
+                // default to Model 1 as a generic backup
+                console.log("Fallback to Model 1 (No list match)");
+                finalSelection = data1 || data2;
             }
     
             if (!finalSelection || !finalSelection.predicted_class) {
-                throw new Error("Invalid response from models");
+                throw new Error("Invalid response from both models.");
             }
     
             setResult({
@@ -95,12 +98,11 @@ const DiseaseRecognize = () => {
     
         } catch (error) {
             console.error("Prediction Error:", error);
-            alert("Prediction failed. Make sure your plant is supported.");
+            alert("Prediction failed. Please check the console for details.");
         } finally {
             setLoading(false);
         }
     };
-
     return (
         <div id='disease-recognizer' className='flex flex-col items-center gap-7 px-4 sm:px-12 lg:px-24 xl:px-40 pt-30 text-text bg-(--color-hero)'>
             <Title title='Disease Recognizer' desc='Upload a plant leaf image to detect disease and get remedies instantly.' />

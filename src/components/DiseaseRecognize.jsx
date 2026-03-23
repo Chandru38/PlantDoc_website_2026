@@ -59,31 +59,36 @@ const DiseaseRecognize = () => {
     
             let finalSelection = null;
 
-            // --- FIXED SELECTION LOGIC ---
+            // --- IMPROVED SELECTION LOGIC ---
             
             const isModel1Expert = data1 && M1_LIST.includes(plant1);
             const isModel2Expert = data2 && M2_LIST.includes(plant2);
 
-            if (isModel2Expert) {
-                // If Model 2 recognizes one of its specific plants (Rice, Sugarcane, etc.)
-                // we give it priority for those specific classes.
-                console.log("✅ Using Model 2 (Expert Match):", plant2);
-                finalSelection = data2;
+            if (isModel1Expert && isModel2Expert) {
+                // TIE-BREAKER: Both models claim to know this plant. 
+                // Pick the one that is more confident.
+                console.log("Dual Match - Tie-breaking by confidence");
+                finalSelection = (data1.confidence >= data2.confidence) ? data1 : data2;
             } 
             else if (isModel1Expert) {
-                // Otherwise, if Model 1 recognizes one of its plants
-                console.log("✅ Using Model 1 (Expert Match):", plant1);
+                console.log("✅ Match found in Model 1 Expert List:", plant1);
                 finalSelection = data1;
             } 
+            else if (isModel2Expert) {
+                console.log("✅ Match found in Model 2 Expert List:", plant2);
+                finalSelection = data2;
+            } 
             else {
-                // Fallback: If neither "expert" list matches perfectly, 
-                // we use the one that is NOT null.
-                console.log("⚠️ No expert match, using best available data");
-                finalSelection = data1 || data2;
+                // FALLBACK: Neither model is sure it's in their list.
+                // We pick the one with higher confidence anyway just to show a result.
+                console.log("⚠️ No strict list match. Showing highest confidence fallback.");
+                const conf1 = data1?.confidence || 0;
+                const conf2 = data2?.confidence || 0;
+                finalSelection = (conf1 >= conf2) ? data1 : data2;
             }
     
             if (!finalSelection || !finalSelection.predicted_class) {
-                throw new Error("Invalid response from models");
+                throw new Error("No valid prediction returned.");
             }
     
             setResult({
@@ -94,7 +99,7 @@ const DiseaseRecognize = () => {
     
         } catch (error) {
             console.error("Prediction Error:", error);
-            alert("Prediction failed. Please check backend status.");
+            alert("Prediction failed. Make sure your internet is connected and backend is live.");
         } finally {
             setLoading(false);
         }

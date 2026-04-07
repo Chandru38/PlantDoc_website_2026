@@ -147,6 +147,12 @@ const DiseaseRecognize = () => {
                                         <ul className="list-disc ml-6">{result.details.precautions.map((item, i) => <li key={i}>{item}</li>)}</ul>
                                     </div>
                                 )}
+                                {result.details.prevention?.length > 0 && (
+                                    <div>
+                                        <h3 className="font-bold">Preventions:</h3>
+                                        <ul className="list-disc ml-6">{result.details.prevention.map((item, i) => <li key={i}>{item}</li>)}</ul>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
